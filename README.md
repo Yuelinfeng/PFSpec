@@ -6,7 +6,7 @@
 
 ### ECCV 2026 (Oral)
 
-[Project Page](https://nicolasvonluetzow.github.io/GaussianGPT/) · [arXiv](https://arxiv.org/abs/2603.26661) · [Paper](https://arxiv.org/pdf/2603.26661) · [Video](https://youtu.be/zVnMHkFzHDg)
+[Project Page](https://nicolasvonluetzow.github.io/GaussianGPT/) · [arXiv](https://arxiv.org/abs/2603.26661) · [Paper](https://arxiv.org/pdf/2603.26661) · [Video (3min)](https://youtu.be/zVnMHkFzHDg) · [Talk (12 min)](https://www.youtube.com/watch?v=13MA4iFV1_o)
 
 ![Teaser](fig/teaser.jpeg)
 
