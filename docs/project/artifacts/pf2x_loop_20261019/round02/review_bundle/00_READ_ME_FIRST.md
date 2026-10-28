@@ -1,0 +1,9 @@
+# GaussianGPT PF2X Round02实际审阅资料
+
+先读DECISION.md与RESULTS.md，再读两份独立审阅和实际配对JSONL。网页原计划保存在WEB_PLAN_ORIGINAL.md，原文保留；该方案已完成CPU和有限GPU微测，后续完整评价未启动。
+
+本轮结果：当前分组输出实现的四token前向配对中位降时约0.49%，未满足继续条件。新增训练0，没有新2×结果。完整原始逐对数据、数值对照、GPU预算与实际调用源码均保留；生产源码和权重未修改。
+
+复算计时：按paired_target.jsonl中shape分组，计算grouped_host_wall_seconds/original_host_wall_seconds的中位数。每形状96对；按scene再分组可得到来源统计。统计所有样本，不剔除离群值。probe脚本的_timing_summary可从同一逐对JSONL重算。数值比较在probe_rows.jsonl的numerical_comparison行，各行metrics.passed；前向和恢复调用分开记账。
+
+不要重新训练12k→192k、重复R1采集或执行未满足条件的后续评价。请基于本轮具体负结果给出下一轮PF分离详细方案，明确每轮有效推进与完整实际成本之间的关系。

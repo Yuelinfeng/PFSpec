@@ -1,0 +1,7 @@
+# 本轮来源划分
+
+source_manifest.csv与source_manifest.json记录全部实际输入。Train使用19个可读适配来源按Scene ID排序的前16个，Val使用余3个及历史Gap D1中ID最小的一个。Dev沿用10个开发来源。补足来源规则在任何新模型结果前确定。各来源只选crop_seed最小的已有裁剪。
+
+source_identity.json来自服务器原始场景JSON，采用jobid、uid、Scene ID的优先顺序分组；60个选中来源分组互不重叠。crop_inventory.json记录实际torch文件及索引。Train/Val目标每来源100条，Dev每来源40条，总量最多2400；生成不足时按真实数量保存，不填充。
+
+20个确认来源取历史Stage E/F裁剪来源按ID排序前20个，本轮不参与学生训练与选择，过去结果已用于整体研究讨论。不能宣称历史完全未见，也无法证明与原Target预训练数据隔离。若后续需要严格历史未探索来源，须另行构造场景资产并计入既定资源额度。

@@ -1,0 +1,131 @@
+\section{Experiments}
+\label{sec:experiments}
+We evaluate whether position speculation provides an effective starting point, whether feature prediction extends its benefit, and whether recovery reuse further reduces serial work. Shared execution improvements and complete 3D requests are evaluated separately.
+
+\subsection{Setup}
+Experiments use GaussianGPT on one RTX 4090, with FP32, TF32 disabled, batch size one, and temperature and top-$p$ both 0.9. The main decoding comparison covers 30 scene sources, 64/256-token prefixes, and at most 512 new tokens. Structural ablations use 10 development sources and a 256-token cap. Target weights and scene representation remain fixed.
+
+Decoding time includes prefix and KV preparation, first-use graph capture, drafting, verification, sampling, recovery, and state maintenance. It excludes model loading, separate warmup, VQ decoding, and rendering. Configurations share the target execution backend. We average paired log-throughput ratios within each source and take an equal-source geometric mean. Confidence intervals (CIs) use source-level resampling; repeated observations are first combined within each input condition. Supplementary Material~C describes sample composition and training differences.
+
+\subsection{From Position Speculation to a P/F Path}
+Position-only measures the benefit of position proposals. W1 and the EAGLE-style Feature adaptations share its Position Ranker to evaluate whether extra feature prediction and state maintenance retain and extend that gain. Medusa and Hydra provide additional full-decoder adaptations.
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Decoding throughput with a shared target backend.} Ratios are relative to the optimized target. Adapted methods are the configurations evaluated in this work.}
+\label{tab:main}
+\begin{tabular}{@{}lrr@{}}\toprule
+Method & Ratio & 95\% CI\\\midrule
+Optimized target & 1.000 & --\\
+Position-only & 1.395 & [1.376, 1.412]\\
+W1: Ranker + Feature MLP & 1.551 & [1.471, 1.615]\\
+\PF: W1 + Rescue & \textbf{1.575} & [1.487, 1.645]\\\midrule
+Medusa, low-rank adaptation & 0.780 & [0.774, 0.785]\\
+Hydra, conditional adaptation & 0.719 & [0.714, 0.724]\\
+Ranker + EAGLE-style Feature & 0.967 & [0.925, 0.997]\\
+Above, with draft KV reuse & 0.930 & [0.890, 0.958]\\\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The feature path extends the position gain.}
+In \cref{tab:main}, Position-only reaches $1.395\times$ throughput. W1 increases this by approximately $11.2\%$, and full \PF\ reaches $1.575\times$. The additional feature prediction and advance provide a net benefit after their drafting cost.
+
+\paragraph{Extra drafting must justify its total cost.}
+The evaluated EAGLE-style configurations share the ranker but do not retain the Position-only speedup. State updates, history-cache work, and prediction error jointly affect throughput. The shared ranker controls the position proposal mechanism, while training, inputs, and reached histories still differ. These results compare the tested adaptations and do not establish a general ranking of the original methods. \PF\ is faster than the optimized target on 29 of 30 sources. On the 55 inputs where all eight methods generate 512 tokens, its ratio is $1.616\times$.
+
+\subsection{Structural Information and State Reuse}
+\paragraph{Position ranking.}
+On 10 sources, the ranker achieves $1.084\times$ throughput over a simple historical position selector, with a 95\% CI of $[1.050,1.119]$. Together with Position-only, this supports inexpensive structured position proposals. A separate speed benefit from explicit XYZ scoring has not been established; candidate construction itself retains spatial information.
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Feature-input ablations.} Ratios use the full-input model trained with the same initialization, data, and training budget as denominator.}
+\label{tab:inputs}
+\begin{tabular}{@{}lrr@{}}\toprule
+Input configuration & Ratio & 95\% CI\\\midrule
+Full inputs & 1.000 & --\\
+Without target state & 0.894 & [0.833, 0.962]\\
+Without candidate Position & 1.018 & [0.957, 1.095]\\
+Without previous Feature & 1.005 & [0.948, 1.073]\\\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Available target state.}
+Removing the target state reduces speed in \cref{tab:inputs}, supporting reuse of computation already performed by the target. The independent speed contributions of candidate Position and previous Feature are less certain; both intervals include one. Matched-budget predictor comparisons also evaluate a residual MLP, direct feature heads, and a single-step Transformer. The Transformer/MLP throughput ratios are 1.064, 1.046, and 1.016 across three training seeds; one CI excludes one. The evidence supports the overall position-proposal and state-prediction arrangement, without establishing the MLP as universally preferable. Details appear in \suppref{C.3}.
+
+\subsection{Why Use a Short Path?}
+A wider draft may increase acceptance while adding drafting and verification work. \Cref{tab:width} compares W1 with a two-Feature-candidate version, W2, on 18 paired inputs from three development sources, all generating 512 tokens.
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Advance versus cost when widening the draft.} W2/W1 ratios use identical pairs and source weights.}
+\label{tab:width}
+\begin{tabular}{@{}lrr@{}}\toprule
+Quantity & Ratio & Change\\\midrule
+Useful advance per round & 1.0437 & $+4.37\%$\\
+Full time amortized per round & 1.0868 & $+8.68\%$\\
+Decoding throughput & 0.9603 & $-3.97\%$\\\bottomrule
+\end{tabular}
+\end{table}
+The advance gain does not cover the round-cost increase. Physical verification nodes increase by $43.93\%$ and target input tokens by $36.23\%$, while target calls decrease by only $1.37\%$. A separate heavier PF-D8 draft also has higher feature acceptance but lower throughput than the lightweight path (\suppref{C.4}). These results motivate evaluating proposal quality together with actual cost.
+
+\subsection{Recovery Benefit with a Fixed Main Path}
+In the main comparison, all 60 W1/Rescue pairs have identical output sequences, round counts, and semantic acceptance counts. The 357 backup hits correspond to 357 fewer recovery calls, reducing calls from 1,080 to 723. Verification adds 4,015 backup nodes and a net 3,658 target input tokens. Throughput nevertheless improves by $1.52\%$, showing that avoided serial work can cover the extra verification cost.
+
+Four independent process repetitions cover 120 unique input conditions and 480 paired observations. Rescue improves throughput by $1.81\%$, with a 95\% CI of $[1.48\%,2.13\%]$. All 480 output and semantic-acceptance pairs match, and recovery calls decrease by 2,908. This gain leaves reference main-path acceptance unchanged, consistent with \cref{eq:cost}. First-use graph capture affects this modest increment, and additional backup nodes do not yield a stable further speedup. Supplementary Material~B reports these limits. Paired identity is evidence for the tested implementation; mathematical preservation relies on the assumptions in \cref{sec:analysis}.
+
+\subsection{Execution Improvements and Complete Requests}
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Decoding attribution on matched inputs.} This experiment uses a different sampling seed from \cref{tab:main}; ratios are not multiplied across the two experiments.}
+\label{tab:attribution}
+\begin{tabular}{@{}lrr@{}}\toprule
+Comparison & Ratio & 95\% CI\\\midrule
+Optimized / original target & 3.240 & [3.163, 3.294]\\
+W1 / optimized target & 1.557 & [1.449, 1.638]\\
+\PF\ / W1 & 1.017 & [1.001, 1.028]\\
+\PF\ / optimized target & \textbf{1.584} & [1.455, 1.675]\\
+\PF\ / original target & \textbf{5.132} & [4.621, 5.482]\\\bottomrule
+\end{tabular}
+\end{table}
+\paragraph{Algorithm and execution.}
+\Cref{tab:attribution} compares the original target, optimized target, W1, and \PF\ on the same inputs. \PF\ retains approximately $1.58\times$ throughput beyond shared execution optimizations. The $5.13\times$ ratio over the original implementation includes CUDA Graphs and other shared execution improvements. The $3.24\times$ optimized-target factor measures the combined backend changes and is not an isolated CUDA Graph result.
+
+\paragraph{Complete requests.}
+On 20 inputs from 10 sources, timing begins with prepared token prefixes and includes generation, VQ decoding, NPZ export, six-view rendering, and saving. With at most 512 new tokens, full \PF\ achieves $4.31\times$ request speedup over the original target, with CI $[3.87,4.66]$. The original target emits 10,240 tokens in total and \PF\ emits 9,837. The 19 pairs that both reach 512 tokens give $4.19\times$ speedup. These quantify actual request behavior and an equal-output-count subset, respectively.
+
+Rescue/W1 request speedup is $1.002\times$ $[0.962,1.025]$, so its independent complete-request increment is not established. All 20 W1/Rescue token pairs match; exports and renderings are valid with very small floating-point and pixel differences. Complete timing and output statistics appear in \suppref{C.5}.
+
+\subsection{Natural-EOS 3D Generation}
+\label{sec:eos}
+\paragraph{Complete requests.}
+We evaluate complete outputs using an earlier execution backend with the same ranker, the Feature model after 12,000 direct-target updates, and the basic P/F path, without Rescue. Completion covers 30 scenes and three seeds each; Generation from beginning-of-sequence (BOS) uses 30 seeds. Across the target, Position-only, and basic P/F modes, there are 360 requests. Each latent chunk is $20\times20\times20$, with a 16,000-token body cap. All requests reach natural EOS without truncation or failure and complete VQ decoding, Gaussian export, and six-view rendering and saving.
+
+\begin{table*}[t]
+\centering\small
+\caption{\textbf{Complete natural-EOS requests and reference-image similarity.} Completion has 90 requests per method (30 scenes, three seeds); BOS has 30. Speedups divide paired target time by method time, weighting scenes or BOS seeds equally. Token counts and times are means; new tokens exclude prefix and EOS. PSNR/SSIM compare completion renderings with the same real crop's VQ reconstruction; BOS has no paired reference. The earlier backend excludes Rescue. Quality means are descriptive, without an equivalence test.}
+\label{tab:eos}
+\label{tab:quality}
+\begin{tabular}{@{}llrrrrrr@{}}\toprule
+Input & Mode & New tokens & Time (s) & Speedup & 95\% CI & PSNR (dB) & SSIM\\\midrule
+\multirow{3}{*}{256-token prefix} & Target & 3,050.2 & 46.07 & 1.000 & -- & 11.41 & 0.7302\\
+& Position-only & 2,987.3 & 31.37 & 1.467 & [1.266, 1.731] & 11.67 & 0.7383\\
+& Basic P/F & 3,086.5 & 29.52 & \textbf{1.569} & [1.318, 1.852] & 11.46 & 0.7321\\\midrule
+\multirow{3}{*}{BOS} & Target & 4,554.1 & 71.00 & 1.000 & -- & -- & --\\
+& Position-only & 4,551.9 & 48.55 & 1.468 & [1.359, 1.598] & -- & --\\
+& Basic P/F & 4,270.7 & 40.33 & \textbf{1.791} & [1.588, 2.023] & -- & --\\\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/natural_eos_completion.png}
+\caption{\textbf{Natural-EOS scene completion from the same prefix.} Rows show target, Position-only, and basic P/F outputs; columns use the same six cameras. This is the predetermined first scene and first seed (51701). Displayed body lengths include the 256-token prefix. Stochastic continuations and final lengths may differ. Basic P/F uses the earlier backend without Rescue; timing follows \cref{tab:eos}.}
+\label{fig:completion}
+\end{figure*}
+
+The basic P/F path reduces complete waiting time on 27 of 30 completion sources (\cref{tab:eos}). Relative to Position-only, its time ratio is $1.070\times$ $[0.912,1.252]$ for completion and $1.220\times$ $[1.094,1.365]$ for BOS. These conditions provide different strengths of evidence for the feature increment, and natural output-length variation also affects request time. \Cref{fig:completion} shows the predetermined first scene and seed; Supplementary Material~C.7 adds BOS outputs and interval plots.
+
+
+
+\paragraph{Rendered outputs and reference similarity.}
+All modes produce valid 3D parameters and renderings. \Cref{tab:quality} reports PSNR and SSIM for the same completion experiment; the means are close to the target's. These descriptive observations complement the distribution-preservation analysis. A whole-image comparison with one reference is sensitive to stochastic continuations and supplies no statistical equivalence test. The natural-EOS results evaluate the basic P/F path; the full-length increment of the current optimized \PF\ with Rescue remains to be measured.

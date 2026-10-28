@@ -1,0 +1,79 @@
+\section{Method}
+\label{sec:method}
+\PF\ combines typed short-path drafting with position recovery precomputation. We denote the version without a backup by W1; full \PF\ adds one backup Position. Both preserve the target weights, representation, and sampling policy.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/pfspec_overview.png}
+\caption{\textbf{Typed drafting and conditional recovery.} Position history supplies the main position $a$, subsequent position $c$, and backup $b$. The Feature MLP predicts a conditional distribution using an available target state. Each target branch retains its full conditional history. The sibling $b$ shares the history preceding $a$ and supplies a reusable state only when the original residual sampler selects it.}
+\label{fig:overview}
+\end{figure*}
+
+\subsection{P/F Generation and Design Objective}
+For an output history $h$, the distribution of a regular position and feature factors as
+\begin{equation}
+p(P,F\mid h)=p_P(P\mid h)\,p_F(F\mid h,P).
+\end{equation}
+EOS terminates generation in a position slot. Throughout, $p$ denotes the normalized target policy after type restrictions, legal spatial ordering, temperature, and top-$p$ processing.
+At the start of a regular round, $h=(\ldots,P_i,F_i)$ has been emitted, but the target KV cache has consumed only through $P_i$; $F_i$ is pending. The available information is the position history $h_P$, emitted feature $F_i$, and target hidden state $u_i$ after $P_i$, before final normalization.
+
+\paragraph{Proposal information and execution cost.}
+We use $h_P$ to propose legal positions and $(u_i,F_i,a)$ to predict a candidate-conditioned feature policy. This is a proposal-side information choice: both target policies retain the complete history. In particular, selecting $c$ before drafting $f$ does not remove $f$ from target verification of $c$. The objective is to improve actual throughput $v=N/T$, counting useful emitted tokens and all drafting, verification, recovery, and initialization costs. The short path assigns neural prediction to the feature-conditioned step; the backup assigns extra target verification to a possible recovery state. Sections~\ref{sec:analysis} and~\ref{sec:experiments} relate these choices to advance, cost, and measured performance.
+
+\subsection{Typed Short-Path Drafting}
+\paragraph{Legal position ranking.}
+The Position Ranker deterministically selects a candidate from a legal set $\mathcal C(h_P)$:
+\begin{equation}
+ a=R(h_P)=\argmax_{v\in\mathcal C(h_P)}s_\theta(v;h_P),\quad
+ q_P(v\mid h)=\delta_a(v).
+\label{eq:ranker}
+\end{equation}
+The generator combines unit increments, historical modes, and a few frequent position-code differences conditioned on recent differences and the phase within a grid of side length 20. It then removes positions outside the 8,000-code vocabulary or inconsistent with the target scan order. This rule produces at most six distinct candidates, avoiding full-vocabulary enumeration. Candidates use past positions only; EOS is handled by target sampling.
+
+A histogram gradient-boosted binary classifier ranks these candidates using 32 historical statistics, including differences, spatial indices, recent increments, counts, conditional frequencies, and recurrence intervals. It uses 150 boosting iterations and at most 15 leaves per tree. A score ranks candidates; it is not the proposal probability in \cref{eq:ranker}. Temporarily appending $a$ to the position history gives the next candidate $c=R(h_P\oplus a)$. Both positions can therefore be selected before feature drafting. Full rules appear in \suppref{C.6}.
+
+\paragraph{Direct feature-state prediction.}
+The conditional Feature MLP predicts a residual for the candidate-position state:
+\begin{equation}
+\widehat u_a=u_i+g_\phi\bigl(\psi(u_i),e_F(F_i),e_P(a)\bigr),
+\label{eq:state}
+\end{equation}
+where $\psi$ encodes the available state and $e_F,e_P$ are typed embeddings. The target normalization and feature head produce
+\begin{equation}
+q_F(\cdot\mid u_i,F_i,a)
+=\Pi_F\!\left(\operatorname{softcap}\bigl(W_F\Norm_T(\widehat u_a)\bigr)\right),
+\end{equation}
+where $\Pi_F$ applies the feature vocabulary, temperature, and top-$p$ normalization. Sampling $f\sim q_F$ forms the main path $(a,f,c)$ with proposal
+\begin{equation}
+q(a,f,c\mid h)=\delta_{R(h_P)}(a)\,q_F(f\mid u_i,F_i,a)\,
+\delta_{R(h_P\oplus a)}(c).
+\end{equation}
+The predictor maps the 1,024-dimensional target state to 256 dimensions and concatenates two 128-dimensional embeddings. A $512\to512\to512\to1024$ residual network with GELU has 2,864,384 trainable parameters and shares the fixed $4096\times1024$ target output weights. Training uses full target-distribution supervision and an auxiliary total-variation objective under the sampling policy; \suppref{C.6} gives the training schedule.
+
+This arrangement concentrates neural prediction on the state needed for Feature. It avoids sequentially constructing all intermediate neural draft states after $F_i$, $a$, and $f$, and maintains no separate neural draft history cache across rounds. The next round uses the committed target state. The target still verifies $c$ under the complete history, using $p_P(c\mid h,a,f)$.
+
+\subsection{Parallel Verification and Path Commitment}
+A full candidate round requires at least four remaining tokens and legal non-EOS proposals $a,c$. The target evaluates
+\begin{equation}
+[F_i,a,f,c],\qquad \mathrm{parents}=[-1,0,1,2].
+\end{equation}
+The four outputs provide policies under $h$, $(h,a)$, $(h,a,f)$, and $(h,a,f,c)$. Candidates are tested in P/F/P order. At each reached history, $X\sim q$ is accepted with probability $\min\{1,p(X)/q(X)\}$; rejection samples from~\cite{leviathan}
+\begin{equation}
+r(y)=\frac{[p(y)-q(y)]_+}{\sum_z[p(z)-q(z)]_+}.
+\label{eq:residual}
+\end{equation}
+For a deterministic position proposal, acceptance is its target probability, and the residual excludes that position. Feature acceptance uses the actual $q_F$.
+
+If the first position is accepted but the feature is rejected, a residual feature ends the round. If the first P/F pair is accepted, the second position is processed. Accepting all three proposals yields a target-sampled bonus feature and four new tokens. Rejection to an unverified regular position requires a target recovery pass to obtain its feature policy and state. EOS terminates directly. Startup, insufficient candidates, and short tails use the reference decoding path.
+
+\subsection{Position Rescue}
+Using the same first-position scores, \PF\ selects the next-ranked legal non-EOS candidate $b\ne a$ and evaluates
+\begin{equation}
+[F_i,a,f,c,b],\qquad \mathrm{parents}=[-1,0,1,2,0].
+\label{eq:tree}
+\end{equation}
+The sibling $b$ has the same preceding history and logical position as $a$. Its attention excludes $a,f,c$. Verification produces $p_F(\cdot\mid h,b)$ and its hidden state and KV.
+
+After main-position rejection, the original W1 residual sampler still chooses $Y$. If $Y=b$, the decoder commits tree nodes $[0,4]$ and reuses the backup state to sample Feature. Otherwise it follows W1. Backup selection adds no acceptance test and consumes no reference-sampling random draws. Without a legal backup, W1 is used. This single backup covers first-position recovery only.
+
+A full W1 round thus uses two position selections, one feature-state prediction, and four-node verification. Rescue reuses the first selection's scores and adds one verification node, saving a serial recovery pass only upon a backup hit.

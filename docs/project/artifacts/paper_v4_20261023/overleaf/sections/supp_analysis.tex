@@ -1,0 +1,167 @@
+\section{Full-Round Analysis and Finite-Request Timing}
+\label{app:analysis}
+\subsection{Round Conditions and Events}
+\label{app:events}
+The following identities condition on the generation state $s$ before a full candidate round: at least four tokens remain; the first position $a$ and second position $c$ are legal non-EOS proposals; and the Feature vocabulary excludes EOS. Startup, insufficient-candidate cases, and short tails are outside this domain. EOS can occur only in residual sampling after one of the two position rejections.
+
+State $s$ contains the history, position ordering, and available target states before this round's random draws. Expectations average over feature drafting, acceptance, and residual sampling. Main, second, and backup positions depend only on already known position histories. Feature drafting and first-position acceptance use independent random draws, so the drafted feature still follows $q_F(\cdot\mid u_i,F_i,a)$ after first-position acceptance.
+
+Let $A_P,A_F,A_{P_2}$ be acceptance of the first position, feature, and second position. Define
+\begin{align}
+w(s)&=\Pr(A_P\mid s),\\
+j(s)&=\Pr(A_P\cap A_F\mid s)=w(s)\alpha_{F\mid P}(s),\\
+\alpha_{F\mid P}(s)&=\Pr(A_F\mid A_P,s),\\
+\beta(s)&=\Pr(A_{P_2}\mid A_P,A_F,s).
+\end{align}
+If a conditioning event has zero probability, the corresponding joint-probability term is zero; an undefined conditional rate is not estimated separately. No independence of acceptance events is assumed. The second-position conditional rate averages over the feature histories reached.
+
+Let $E_1$ denote residual EOS after first-position rejection, and $E_2$ residual EOS after acceptance of the first P/F pair and rejection of the second position. These events are disjoint, with
+\begin{equation}
+e(s)=\Pr(E_1\mid s)+\Pr(E_2\mid s).
+\end{equation}
+Under the full-round, non-EOS-proposal assumptions, these exhaust EOS termination. A different control flow requires its own complete enumeration.
+
+\subsection{Useful Advance}
+\label{app:advance}
+Let $N_r$ count new tokens, including EOS when emitted, and $K_r^{\Wone}$ count additional position recovery passes. The possible paths are listed in \cref{tab:paths}.
+\begin{table*}[t]
+\centering\small
+\caption{\textbf{Paths in a full W1 candidate round.} A regular recovered position requires a target pass to generate its associated feature. EOS terminates without that pass.}
+\label{tab:paths}
+\begin{tabular}{@{}lcc@{}}\toprule
+Realized path & $N_r$ & $K_r^{\Wone}$\\\midrule
+First position rejected; residual EOS & 1 & 0\\
+First position rejected; regular residual position & 2 & 1\\
+First position accepted; Feature rejected & 2 & 0\\
+First P/F pair accepted; second position rejected to EOS & 3 & 0\\
+First P/F pair accepted; second position rejected to a regular position & 4 & 1\\
+All three main proposals accepted & 4 & 0\\\bottomrule
+\end{tabular}
+\end{table*}
+The path counts give
+\begin{equation}
+N_r=2+2\ind_{A_P\cap A_F}-\ind_{E_1}-\ind_{E_2},
+\end{equation}
+and hence
+\begin{equation}
+\boxed{\E[N_r\mid s]=2+2j(s)-e(s).}
+\end{equation}
+If EOS has zero probability under all relevant target policies, this simplifies to
+\begin{equation}
+\E[N_r\mid s]=2+2w(s)\alpha_{F\mid P}(s).
+\end{equation}
+Observing a round without EOS does not establish $e(s)=0$.
+
+Standard speculative acceptance~\cite{leviathan} yields
+\begin{align}
+\alpha_{F\mid P}(s)
+&=\sum_f\min\{p_F(f\mid h,a),q_F(f\mid u_i,F_i,a)\}\nonumber\\
+&=1-\TV\bigl(p_F(\cdot\mid h,a),q_F(\cdot\mid u_i,F_i,a)\bigr),
+\end{align}
+where $\TV(p,q)=\tfrac12\sum_x|p(x)-q(x)|$. The point proposal gives $w(s)=p_P(a\mid h)$. This relates conditional match to useful advance; costs and reached states can also change with the proposal mechanism, so overlap alone does not imply optimal throughput.
+
+\subsection{Two Types of Position Recovery}
+\label{app:recovery}
+A regular residual position after first-position rejection requires one recovery pass. A regular residual position after second-position rejection requires another kind of recovery pass. Thus
+\begin{align}
+K_r^{\Wone}
+={}&\ind_{\neg A_P\cap\neg E_1}\nonumber\\
+&+\ind_{A_P\cap A_F\cap\neg A_{P_2}\cap\neg E_2}.
+\end{align}
+Since $E_1\subseteq\neg A_P$ and $E_2\subseteq A_P\cap A_F\cap\neg A_{P_2}$,
+\begin{equation}
+\E[K_r^{\Wone}\mid s]=(1-w(s))+j(s)[1-\beta(s)]-e(s).
+\end{equation}
+Second-position acceptance does not increase the four-token advance limit; it avoids a second-position recovery. Acceptance of the first P/F pair increases advance and makes the second-position branch reachable.
+
+Counts do not directly measure time. If actual recovery times are $c_1,c_2$, then
+\begin{equation}
+C_{\rm rec}=\ind_{\mathcal R_1}c_1+\ind_{\mathcal R_2}c_2,
+\end{equation}
+where $\mathcal R_1,\mathcal R_2$ are the two regular-position recovery events above. Their costs can depend on history and execution state.
+
+\subsection{Backup Hits and Recovery-Call Savings}
+\label{app:hits}
+Suppose the round has a known legal non-EOS backup $b\ne a$. Let $H_b$ denote first-position rejection followed by residual recovery to $b$. For $w(s)<1$,
+\begin{align}
+\Pr(Y=b\mid\neg A_P,s)&=\frac{p_P(b\mid h)}{1-p_P(a\mid h)},\\
+\Pr(H_b\mid s)&=p_P(b\mid h).
+\end{align}
+The first expression is a hit rate conditional on rejection; the second is the unconditional hit mass for an eligible round. If $w=1$, rejection and backup mass are zero, and the conditional denominator need not be evaluated. Backup selection uses known history and ranking, without consulting reference recovery randomness.
+
+Under trajectory preservation, a hit saves one first-position recovery; every other corresponding path remains unchanged:
+\begin{align}
+K_r^{\Res}&=K_r^{\Wone}-\ind_{H_b},\\
+\E[K_r^{\Res}\mid s]&=\E[K_r^{\Wone}\mid s]-p_P(b\mid h).
+\end{align}
+Without a legal backup, the decoder follows W1. Statistics over all rounds must account for eligibility. One added verification node still has a cost, so fewer recovery calls do not imply a proportional reduction in target computation or time. Reference outputs and round boundaries are preserved; Rescue does not increase W1's main-path advance.
+
+\subsection{Complete Cost of Recovery Reuse}
+\label{app:cost}
+For the same generation state and coupled random operations, let $D_r$ be the net change in all costs except the replaced recovery pass. It includes the extra verification node, tree construction, KV handling, graph behavior, and execution interactions. Let $c_{\rm saved,r}$ be the recovery time saved upon a hit. Then
+\begin{equation}
+C_{\Res,r}-C_{\Wone,r}=D_r-\ind_{H_b}c_{\rm saved,r},
+\end{equation}
+so
+\begin{align}
+\E[\Delta C_r\mid s]
+={}&\E[D_r\mid s]\nonumber\\
+&-p_P(b\mid h)\E[c_{\rm saved,r}\mid s,H_b].
+\end{align}
+The zero-hit-probability term is zero without separately defining its conditional cost. A positive expected local benefit occurs exactly when
+\begin{equation}
+p_P(b\mid h)\E[c_{\rm saved,r}\mid s,H_b]>\E[D_r\mid s].
+\end{equation}
+This local condition uses the complete cost definition. Without separate estimates, it provides an explanation rather than a numerical speed prediction. Additional graph residency, capacity, and first-use execution can affect later rounds, so it does not establish a request-level optimal choice.
+
+The complete request also includes initialization:
+\begin{align}
+T_{\Res}-T_{\Wone}
+={}&\Delta T_{\rm init}+\sum_rD_r\nonumber\\
+&-\sum_r\ind_{H_{b,r}}c_{\rm saved,r}.
+\end{align}
+Round costs must reflect actual execution state; isolated node microbenchmarks alone do not supply this difference.
+
+\subsection{Startup, Round Counts, and Finite Requests}
+\label{app:timing}
+For method $m$, let $N_m$ be emitted tokens and $T_m>0$ total decoding time. W1-style round counts cover entries into the main loop. BOS startup may first emit a P/F pair or EOS. With $N_{\rm boot,m}$ denoting startup outputs, excluding input BOS,
+\begin{equation}
+N_m=N_{\rm boot,m}+\sum_{r=1}^{R_m}N_r.
+\end{equation}
+This sum includes full rounds, insufficient-candidate cases, and tails; the earlier identities apply only to rounds satisfying their assumptions. For $R_m>0$, distinguish
+\begin{align}
+G_m^{\rm request}&=N_m/R_m,\\
+G_m^{\rm loop}&=(N_m-N_{\rm boot,m})/R_m,\\
+\overline C_m&=T_m/R_m.
+\end{align}
+Then
+\begin{equation}
+\boxed{v_m=N_m/T_m=G_m^{\rm request}/\overline C_m.}
+\end{equation}
+Request advance amortizes startup output over counted rounds, whereas loop advance measures only the counted loop. The simplified non-terminating-round expectation additionally requires zero relevant EOS probabilities. For $R_m=0$, round ratios are undefined but $v_m=N_m/T_m$ remains valid.
+
+The original and optimized autoregressive targets have different step semantics from W1 candidate rounds. Their direct comparisons use token counts and complete decoding time; round decompositions are used only for methods with compatible round definitions.
+
+Write
+\begin{equation}
+T_m=T_{\rm init,m}+\sum_rC_{m,r}.
+\end{equation}
+Initialization includes BOS startup and other decoding work outside counted rounds. Timing includes runtime creation, prefix and KV preparation, first graph capture, drafting, verification, sampling, recovery, and state handling, while excluding model loading, VQ decoding, and rendering. Graph capture is counted once where it occurs. Stage times must be disjoint, and shared forward work remains a joint term. CUDA-event and host wall times cannot be added. The main adapted-method comparison lacks complete stage-level timings; call and input counts do not substitute for them.
+
+\subsection{Paired Speedup and Attribution}
+\label{app:ratios}
+The throughput ratio of methods $a,b$ is
+\begin{equation}
+S_{a/b}=\frac{N_a/T_a}{N_b/T_b}
+=\frac{N_a}{N_b}\frac{T_b}{T_a}.
+\end{equation}
+It equals request-time speedup only when output counts match. For positive compatible round counts,
+\begin{equation}
+S_{a/b}=\frac{G_a^{\rm request}}{G_b^{\rm request}}
+\frac{\overline C_b}{\overline C_a}.
+\end{equation}
+Net speedup requires relative advance to exceed relative complete-round cost. W1/W2 use compatible rounds and no startup output in that comparison. W1/Rescue preserve corresponding outputs and rounds, so their speed difference comes from time. Changing a proposer can change trajectories and round grouping; Rescue's paired-trajectory argument cannot be applied to arbitrary proposers.
+
+Using identical pairs and equal-source averages of log ratios preserves multiplicative factorization of geometric means. Pooled total-token/total-time statistics use different weights and are not combined with that factorization. CIs are resampled over sources and are not multiplied. The shared-execution, W1, and Rescue point ratios factor only within the same attribution experiment. The $5.13\times$ result is measured, not predicted from acceptance probabilities.
+
+This analysis characterizes P/F conditional acceptance, useful advance, two position-recovery events, and backup-state reuse. Standard residual sampling and the finite-request identities provide correctness and interpretation, without constituting a new general optimality theory.

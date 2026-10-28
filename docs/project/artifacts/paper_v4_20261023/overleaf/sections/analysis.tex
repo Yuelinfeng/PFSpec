@@ -1,0 +1,36 @@
+\section{Correctness and Computational Benefit}
+\label{sec:analysis}
+\subsection{Target Distribution and Reference Trajectory}
+\paragraph{Proposition 1: target-distribution preservation.}
+If verification supplies the correct target policy at each reached history and sampling uses the actual proposal with standard acceptance and residual rules, W1 preserves the target distribution. The one-step output probability is
+\begin{equation}
+\Pr(Y=y)=\min\{p(y),q(y)\}+[p(y)-q(y)]_+=p(y).
+\end{equation}
+Recursion along the committed history gives the sequence result. A candidate is committed only after all preceding proposals are accepted.
+
+\paragraph{Proposition 2: trajectory preservation relative to W1.}
+Assume a deterministic target and exact arithmetic. Suppose adding the backup leaves main-path states unchanged; the backup and ordinary recovery have identical histories, logical positions, attention, policies, hidden states, and KV; and both decoders use the same sampling algorithms and random-draw order, including subsequent drafting. Then Rescue and W1 produce identical corresponding outputs, acceptance events, and subsequent generation states. A backup hit substitutes an equivalent state; every other event follows W1. Induction over rounds proves the claim. Buffer lifetime and detailed state conditions appear in \suppref{C.1}. Finite-precision paired-output tests provide implementation evidence, distinct from these mathematical assumptions.
+
+\subsection{Useful Advance and Position Recovery}
+For a full candidate round, let $s$ be the state before drafting, $w$ the first-position acceptance probability, $j$ the joint acceptance probability of the first P/F pair, and $\beta$ the conditional acceptance probability of the second position when reached. Let $e$ be the total probability of the two mutually exclusive residual-EOS events. The new-token count $N_r$ and additional recovery-call count $K_r$ satisfy
+\begin{align}
+\E[N_r\mid s]&=2+2j(s)-e(s),\label{eq:advance}\\
+\E[K_r^{\Wone}\mid s]&=(1-w(s))+j(s)(1-\beta(s))-e(s).
+\label{eq:recover}
+\end{align}
+Accepting the first P/F pair increases useful advance. Accepting the second position leaves the four-token maximum unchanged but avoids a recovery pass. Given first-position acceptance, feature acceptance equals the overlap of the target and proposal distributions. Feature prediction must therefore be judged by both distributional match and computation cost. Supplementary Material~A derives the branch counts without assuming independent acceptance events.
+
+\subsection{Value of Recovery Precomputation}
+Let $H_b$ denote first-position rejection followed by residual selection of backup $b$. With a point proposal at $a$ and legal $b\ne a$,
+\begin{equation}
+\Pr(H_b\mid s)=p_P(b\mid h),\qquad
+K_r^{\Res}=K_r^{\Wone}-\ind_{H_b}.
+\label{eq:hit}
+\end{equation}
+Main-position acceptance alone cannot determine backup value: states with the same $p_P(a\mid h)$ can assign different mass to $b$.
+Let $D_r$ include all net added verification, attention, KV, and execution costs, and let $c_{\rm rec,r}$ be the recovery time saved on a hit. Then
+\begin{equation}
+C_{\Res,r}-C_{\Wone,r}=D_r-\ind_{H_b}c_{\rm rec,r}.
+\label{eq:cost}
+\end{equation}
+Precomputation helps only when saved serial work exceeds added cost. This is a local accounting relation, not a general optimality result. Complete requests also include initialization and first-use graph costs. We evaluate actual throughput $v=N/T$ and distinguish it from request-time speedup; \suppref{A.5--A.7} gives the finite-request definitions.

@@ -1,0 +1,5 @@
+\section{Discussion and Conclusion}
+\label{sec:conclusion}
+\PF\ uses position ranking, target-state-assisted feature prediction, and backup-state reuse to reduce serial work. It achieves approximately $1.58\times$ decoding throughput over the target with shared execution optimizations.
+
+Evaluation covers one target, one RTX 4090, and single chunks. Basic P/F has natural-EOS results; the main full-\PF\ comparisons use a 512-new-token cap. Full-length Rescue gains, cross-model and cross-device performance, and multi-chunk continuity remain to be evaluated. Adaptations differ in training and inputs, and the local recovery analysis provides no general optimality guarantee.

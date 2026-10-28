@@ -1,0 +1,15 @@
+\section{Additional Measurements and Unsuccessful Variants}
+\label{app:additional}
+\paragraph{Independent single-backup measurement.}
+An earlier 30-source, 60-pair experiment has 3,875 backup-eligible rounds, 858 first-position rejections, and 388 hits. Recovery calls decrease from 1,181 to 793. The 3,875 added backup nodes yield a net 3,487 additional target input tokens. Rescue/W1 throughput is $1.017481\times$, and full \PF/original-target throughput is $5.056076\times$. These counts belong to a different experiment from the main paper's $5.131692\times$ attribution result.
+
+\paragraph{Backup count.}
+Across 30 sources, six configurations, and 360 decodes, two, three, and four backups achieve throughput ratios of 0.992680, 0.985475, and 0.981246 relative to one backup. Incremental hits from the first through fourth backups are 342, 53, 9, and 0. In this experiment, single-backup/W1 throughput is $1.010581\times$ with CI $[0.998934,1.018449]$, which includes one. The common 512-token and no-new-graph subsets give $1.016330\times$ and $1.018024\times$. More coverage does not yield higher throughput in this implementation.
+
+\paragraph{Dynamic recovery selection.}
+On 20 new sources and two process repetitions, 800 decodes and 400 complete requests evaluate a value-based selection implementation. Its decoding and request ratios relative to fixed single-backup selection are 0.932238 and 0.941442; it also lacks a reliable advantage over probability--cost selection or a ranker with the same count. In the same data, fixed single-backup/W1 source-equal ratios are 1.013946 $[1.007536,1.019324]$ for decoding and 1.008566 $[1.001018,1.015219]$ for requests. The ratio of cumulative complete-request times is only 1.000120 $[0.982643,1.014994]$. Equal-source improvement and nearly unchanged cumulative waiting time measure different summaries.
+
+The initial dynamic implementation includes avoidable execution overhead. A subsequent implementation improvement on three development sources increases its speed, but its ratios relative to the fixed single-backup path remain 0.990502 for decoding and 0.992057 for requests. Another probability--cost modeling experiment yields a dynamic/fixed ratio of 0.993432 and a ratio of 1.000437 against a probability rule, with the latter CI including one. These results establish no additional benefit for the evaluated dynamic strategies, without ruling out other policies.
+
+\paragraph{Fixed-prefix analysis.}
+A cost-selection experiment on 39 stored states and candidate enumeration over the same pool use identical sources and prefixes but measure different quantities. The cost-selection/W1 ratio is $0.987458\times$ with a CI including one. Enumeration finds that the single backup increases covered probability mass in only 2 of 39 states, with a source-equal gain of 0.6764 percentage points. The enumeration lacks matching full recovery-time measurements for each state, so it cannot be combined with separate microbenchmarks to form an online net-benefit curve. These states do not characterize the entire online state space.

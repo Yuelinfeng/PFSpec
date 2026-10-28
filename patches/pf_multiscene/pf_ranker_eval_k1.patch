@@ -1,0 +1,22 @@
+--- a/draft_a/pf_ranker_eval.py
++++ b/draft_a/pf_ranker_eval.py
+@@ -55,4 +55,4 @@
+     length = len(prompt)
+     tc = cache_for(target, length + budget + 2 * k + 2)
+-    dc = cache_for(draft, length + budget + 2 * k + 2) if k else None
++    dc = cache_for(draft, length + budget + 2 * k + 2) if k > 1 and draft is not None else None
+     stats = dict(target_calls=0, draft_calls=0, ranker_calls=0,
+@@ -87,5 +87,5 @@
+     prefix = list(prompt)
+     if length > 1:
+         tf(prompt[:-1])
+-        if k:
++        if k > 1 and draft is not None:
+             df(prompt[:-1])
+@@ -179,4 +179,5 @@
+             if rejected:
+                 rewind(tc, len(prefix) - 1)
+-                rewind(dc, len(prefix) - 1)
++                if dc is not None:
++                    rewind(dc, len(prefix) - 1)
+                 if kind == "position" and actual != EOS:

@@ -1,0 +1,144 @@
+\section{Correctness Conditions and Experimental Details}
+\label{app:details}
+\subsection{Distribution and Trajectory Preservation}
+\label{app:proof}
+\paragraph{Proposition 1.}
+At each reached full history, use the correct target policy $p$, actual proposal $q$, and standard acceptance and residual sampling~\cite{leviathan}. The probability of accepting and emitting $y$ is $\min\{p(y),q(y)\}$. If total rejection mass is $Z$, then
+\begin{align}
+\min\{p(y),q(y)\}+Zr(y)
+&=\min\{p(y),q(y)\}+[p(y)-q(y)]_+\nonumber\\
+&=p(y).
+\end{align}
+For $Z=0$, rejection is impossible and the residual policy need not be defined. Parallel verification provides outputs for the appropriate conditional histories, and sequential acceptance commits only the realized prefix. Applying this identity along the true history yields the sequence distribution. It does not require W1 and ordinary autoregressive sampling to produce identical tokens under the same seed.
+
+\paragraph{Proposition 2.}
+Fix W1's proposals and reference random operations. Assume a deterministic target and exact arithmetic, and require:
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item Adding the backup leaves all main-path node states equivalent to W1.
+\item The backup and ordinary recovery use the same full history, logical position, attention range, output policy, hidden state, and KV values.
+\item Only the realized path enters the next generation state. Graph output buffers are consumed or copied before they are overwritten.
+\item Both decoders use the same Feature policy, sampling algorithm, and random-draw order, including randomness used by later drafts.
+\end{enumerate}
+Under these conditions, Rescue and W1 have corresponding identical outputs, acceptance events, and generation states.
+
+To prove the claim, consider one round. Main-path acceptance executes the same W1 operations. On first-position rejection, the same residual policy and random operations produce the same $Y$. A miss follows the same recovery path; a hit provides an equivalent state and therefore the same next feature and committed generation state. EOS, startup, and tails retain the reference operations. Induction proves identical trajectories for finite requests. Together with Proposition 1, Rescue preserves the target distribution.
+
+The propositions have different assumptions and claims. GPU operator order, attention execution, and finite precision may affect numerical states. Measured output equality and small numerical discrepancies provide implementation evidence, without replacing these assumptions.
+
+\subsection{Main Comparison}
+\label{app:main}
+The main comparison uses 30 sources, prefixes of 64 and 256 tokens, sampling seed 57101, and a 512-token cap: eight methods and 480 decodes. Each method has an independent persistent runtime. Separate warmup instances are discarded; any new graph capture during an evaluated request is timed. Method order rotates across inputs and is periodically reversed. GPU execution is serial across evaluated configurations.
+
+The EAGLE-style Feature draft and its cache-reuse counterpart share Feature weights and differ in cross-round draft-cache reuse. Both share the Position Ranker with W1. Medusa and Hydra are separate full adaptations. Training, inputs, parameter counts, and the actual reached histories still differ. These are local adaptations, not official model-version comparisons.
+
+Complete stage timings are unavailable for this comparison. Calls and input counts explain work but do not substitute for neural, sampling, cache, and verification times. On the 55 inputs where all eight methods emit 512 tokens, \PF/optimized-target throughput is 1.615909 $[1.557002,1.665287]$, while the EAGLE-style Feature adaptation gives 0.986061 $[0.965678,1.002727]$.
+
+\subsection{Architecture, Inputs, and Training Budget}
+\label{app:structure}
+The structural comparison covers 10 development sources, two prefix lengths, a 256-token cap, and 18 configurations, totaling 360 decodes. B0/B1 models use the same 40 target trajectories, split as 36/4 complete trajectories, with 16,348/2,044 training/validation rows. They receive ten epochs of AdamW with the same teacher-distribution cross-entropy objective. Training seeds are 20261018, 20261019, and 20261020.
+
+\begin{table*}[t]
+\centering\small
+\caption{\textbf{Predictors trained with matched data and update budgets.} Ratios compare each architecture to B0 trained with the same seed. Brackets give 95\% CIs.}
+\label{tab:architecture}
+\begin{tabular}{@{}lrrrr@{}}\toprule
+Architecture & Trainable parameters & Seed 1 & Seed 2 & Seed 3\\\midrule
+B0: residual-state MLP & 2.864M & 1 & 1 & 1\\
+B1-M: direct head, no candidate P & 3.088M & 0.842 [0.672, 0.973] & 0.953 [0.912, 0.999] & 0.930 [0.894, 0.966]\\
+B1-H: conditional direct head & 4.178M & 0.966 [0.895, 1.029] & 0.948 [0.906, 0.994] & 0.947 [0.910, 0.986]\\
+B1-E: single-step Transformer & 1.318M & 1.064 [0.974, 1.144] & 1.046 [1.006, 1.085] & 1.016 [0.908, 1.116]\\\bottomrule
+\end{tabular}
+\end{table*}
+
+B0 shares 4.194M fixed weight elements, and B1-E shares 16.646M. B1-E maintains no cross-round draft KV and is not a complete EAGLE implementation. The main method receives more training than B0/B1, so their performance difference cannot be assigned entirely to architecture.
+
+Input ablations use the same initialization, data, and eight-epoch budget, training each input variant separately. On the common full-256-token subset of 17 inputs from nine sources, removing the target state gives a ratio of 0.897792 $[0.835997,0.972416]$. Removing candidate Position or previous Feature still gives CIs that include one, consistent with the full-sample analysis.
+
+\subsection{Width, Heavier Drafts, and Repeated Rescue Timing}
+\label{app:repeat}
+The W1/W2 comparison uses three development sources, 64/256-token prefixes, and three sampling seeds: 18 paired inputs, all generating 512 tokens. Source-equal ratios are 1.043680827 for advance, 1.086795177 for full round cost, and 0.960328910 for throughput. The throughput CI is $[0.938755,0.988246]$. Each configuration emits 9,216 tokens.
+
+The heavier-draft comparison covers 30 sources, 56 distinct crops, three sampling seeds, and five methods, totaling 2,160 evaluations. Feature acceptance is $33.2582\%$ for the lightweight path and $55.4712\%$ for PF-D8, whereas their source-equal throughput ratios over the target in that experiment are $1.71250\times$ and $1.46646\times$. Draft architecture and prediction length both change; this comparison illustrates the relationship between acceptance and actual cost.
+
+In the main comparison, both W1 and Rescue emit 29,521 tokens, run 11,174 rounds, and accept 3,588 Feature proposals. Target calls change from 12,314 to 11,957; recovery calls from 1,080 to 723; and input tokens from 55,294 to 58,952. There are 4,015 backup nodes, and the throughput ratio is 1.015189 $[1.004406,1.022387]$.
+
+Four independent process repetitions cover 30 sources, two prefix lengths, and two sampling seeds: 120 unique input conditions, 960 decodes, and 480 paired observations. The source-equal throughput ratio is 1.018092 $[1.014818,1.021327]$. Recovery calls decrease from 8,400 to 5,492. Added verification nodes total 31,948, and net added target inputs total 29,040. Twenty-eight of 30 sources are faster. The subset with a new graph gives $0.875832\times$, but contains only eight observations from four sources; the no-new-graph subset gives $1.020338\times$.
+
+\subsection{Execution and Complete Requests}
+\label{app:e2e}
+The shared target backend uses dynamic-position CUDA Graphs, reusing graphs according to cache, input shape, and history-read range. Tree verification uses ancestor-constrained attention and commits only the realized KV path. Graph output buffers can be overwritten by later execution; selected states are used or copied beforehand.
+
+The attribution experiment uses 30 sources, two prefix lengths, seed 51101, and four configurations, totaling 240 decodes. Exact point ratios are 3.240487 for optimized/original target, 1.557471 for W1/optimized target, 1.016788 for \PF/W1, 1.583618 for \PF/optimized target, and 5.131692 for \PF/original target. Unrounded point estimates factor multiplicatively under the same pairs and source weights. Ratios from other experiments and CI endpoints do not enter that equality.
+
+The complete-request experiment uses 10 sources, 20 inputs, and three methods, totaling 60 requests. Timing begins at the prepared token prefix and includes generation, VQ decoding, NPZ export, rendering six $384\times384$ views, and PNG saving. Model loading, separate warmup, input acquisition, and encoding are excluded. Request speedup divides comparator time by method time.
+
+\PF/original-target speedup is 4.307862 $[3.867624,4.660647]$, and \PF/W1 is 1.001848 $[0.962270,1.024833]$. The original target emits 10,240 tokens in total; W1 and \PF\ each emit 9,837. The 19 pairs where both emit 512 tokens give \PF/original-target speedup of 4.185458 $[3.546722,4.660647]$. Full-sample and equal-count results are reported separately and apply to single chunks with this output cap.
+
+All 20 W1/\PF\ token pairs match. The 60 Gaussian exports and 360 images are valid, with very small Gaussian-parameter and pixel differences. This demonstrates output compatibility under the tested configurations, without measuring improved absolute visual quality.
+
+\subsection{Candidate Construction, Predictor, and Training}
+\label{app:training}
+\paragraph{Position candidates.}
+Let committed position codes be $v_i$, differences $g_i=v_i-v_{i-1}$, and phase $\varphi=v_i\bmod20$. Difference counts are maintained by the last-two-difference state $s_g$, by phase, and by their combination, denoted $M,B,Z$, respectively. Let $m$ be the mode of $M$ when its total is at least three, and 1 otherwise. Let $z$ be the mode of $Z$ when its total is at least three, and $m$ otherwise. The initial difference candidates are $z$, 1, $m$, and the two most frequent entries of $Z$. If $\varphi=1$, or $s_g=(1,1)$ and $\varphi\in\{12,14\}$, the three most frequent entries of $Z$ are included. If $Z$ has total count below three, the two most frequent entries of $B$ are included. Duplicates are removed. Mapping $g$ to $v_i+g$ yields position candidates; only in-vocabulary codes with strictly larger target scan indices are kept.
+
+There are at most six distinct candidates. In the dense-$Z$ case, its mode is among its top three; together with 1 and $m$, this gives at most five. In the sparse-$Z$ case, $z=m$ and $Z$ has at most two observed differences; adding 1, $m$, and two phase candidates gives at most six. Legal filtering can only reduce this count. This is a bound on candidate construction, not a latency measurement.
+
+The 32-dimensional input includes the difference, phase, spatial indices, four recent differences, set size, mode and high-frequency indicators, historical smoothing weights, second- and third-order counts, conditional frequencies, and recurrence intervals. Progress is the generated-position index divided by 511, a fixed training scale that does not read eventual EOS length. State updates follow actual committed positions. The second proposal uses temporary history including $a$; only the realized path is retained afterward.
+
+The ranker uses histogram gradient boosting with learning rate 0.05, 150 iterations, at most 15 leaves, at least 40 samples per leaf, L2 regularization 10, and no early stopping. A candidate is positive when it equals the next position sampled by the target; other candidates are negative. Candidates and features are formed from prior history before labels are read. A compiled CPU numerical-tree scorer handles online ranking; singleton sets bypass it. In an earlier 12-seed, 1,024-token experiment, 2,273 score calls take 0.182772 seconds in total, averaging 0.080410 ms per call. This excludes candidate construction, state copying, and target execution. Scores and historical smoothing weights are not the actual position proposal probabilities.
+
+\paragraph{Feature predictor.}
+The state passes through LayerNorm and a $1024\to256$ linear map. Previous Feature and candidate Position use $4096\times128$ and $8000\times128$ embeddings. The concatenated 512-dimensional input passes through LayerNorm, two 512-dimensional GELU layers, and a $512\to1024$ output layer. This output is added to the available state. The target's final normalization, fixed feature head, and $15\tanh(z/15)$ softcap follow.
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Trainable Feature-predictor parameters.} The target output head is shared and fixed.}
+\label{tab:parameters}
+\begin{tabular}{@{}lr@{}}\toprule
+Component & Parameters\\\midrule
+Input LayerNorm and $1024\to256$ & 264,448\\
+Feature embedding & 524,288\\
+Position embedding & 1,024,000\\
+Concatenation LayerNorm & 1,024\\
+Three residual linear layers & 1,050,624\\\midrule
+Total & \textbf{2,864,384}\\\bottomrule
+\end{tabular}
+\end{table}
+
+The shared head has 4,194,304 fixed weight elements. Linear-layer dimensions imply approximately 5,505,024 multiply--accumulate operations per state prediction and output readout, including 4,194,304 in the head. This excludes normalization, activations, policy processing, memory access, and scheduling, and is not a time estimate.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/natural_eos_requests.png}
+\caption{\textbf{Natural-EOS request-time ratios for the basic P/F path.} Points show paired geometric-mean ratios and bars show 95\% resampling intervals. The vertical line denotes equal time. Completion resamples scenes; BOS resamples seeds. This experiment uses an earlier backend without Rescue.}
+\label{fig:intervals}
+\end{figure*}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/natural_eos_bos.png}
+\caption{\textbf{Natural generation from BOS.} The predetermined seed 51801 is shown for the three modes under six fixed cameras. Basic P/F excludes Rescue. Identical seeds can lead to different random-operation sequences and outputs across methods; the figure illustrates complete 3D outputs.}
+\label{fig:bos}
+\end{figure*}
+
+
+\paragraph{Training.}
+The main model starts from an existing state-distillation initialization and is then trained on full distributions from the original target. Data are split by complete trajectories: 400 training trajectories with 418,021 state rows, and 50 validation trajectories with 46,893 rows. These are target trajectories, not independent 3D scene counts. Each row contains the previous position state, previous actual feature, current position, and teacher distribution. The first feature is target-generated and excluded from this state supervision.
+
+Let $p^{(1)}$ and $q_\phi^{(1)}$ be untruncated, temperature-one policies over 4,096 features, and $p^\pi,q_\phi^\pi$ their temperature/top-$p$ 0.9 policies. Direct-target training minimizes
+\begin{equation}
+\mathcal L_\phi=-\sum_f p^{(1)}(f)\log q_\phi^{(1)}(f)
++\lambda\TV(p^\pi,q_\phi^\pi).
+\end{equation}
+The first three stages have 1,200 updates each, initial learning rates $3\times10^{-5},10^{-5},10^{-5}$, and $\lambda=0,0,2$. Training continues for 8,400 updates with $\lambda=2$ and initial rate $10^{-5}$. Each stage uses cosine decay to one tenth of its starting rate, AdamW weight decay 0.01, and gradient-norm limit 1. An update processes two trajectories using accumulated chunks of 256 rows. Training uses BF16; validation and evaluated inference use FP32. Full-validation row-weighted policy overlap selects the model at 12,000 cumulative direct-target updates. Initialization training is additional. This selection metric is not an independent online speed result.
+
+\subsection{Full-Length Single-Chunk Outputs}
+\label{app:natural}
+Natural-EOS experiments use the original target, the same ranker and 12,000-update Feature model, and the three-proposal/four-node basic P/F path. Their backend predates the shared graph optimizations and excludes Rescue. Completion uses predetermined crops from 30 test sources, a 256-token prefix, and seeds 51701--51703. BOS uses seeds 51801--51830. The body cap is 16,000, precision FP32, temperature/top-$p$ 0.9, and chunk physical side length 4 meters.
+
+All 360 requests terminate at natural EOS without truncation and produce complete 3D outputs. Timing starts from a prepared prefix or BOS and includes generation, VQ decoding, export, and rendering and saving six $384\times384$ images. It excludes model loading, separate warmup, input encoding, and reference reconstruction. Completion ratios first combine three seeds per scene geometrically, then weight the 30 scenes equally. BOS ratios pair 30 seeds. CIs use 10,000 resamples. Sources are not added to other experimental source counts, and BOS seeds are not additional scene sources.
+
+The basic P/F path produces completion body lengths of 306--5,792 tokens including the prefix and BOS lengths of 2,462--5,646 tokens, all terminating naturally. Mean completion Gaussian counts are 218,986 for the target, 212,133 for Position-only, and 222,091 for basic P/F. Corresponding scale-clipping proportions are 8.74\%, 8.84\%, and 8.63\%. These describe outputs without defining a generative-quality ranking.
+
+Main-paper Table~5 reports the corresponding whole-image PSNR and SSIM means against the VQ reconstruction of the same real crop. These are descriptive averages; confidence intervals for quality differences and equivalence margins have not been evaluated. Whole images contain stochastic continuations, so these values do not establish distributional equality or visual-quality improvement. BOS has no paired real-scene reference. Known-region masked quality, KID/FID, and multi-chunk continuity are not evaluated in this experiment.
+
+The qualitative figures show direct renderings of the generated Gaussian scenes. The interval plot distinguishes input conditions and comparator methods. These measurements evaluate the basic P/F path and do not measure the natural-EOS increment of full \PF\ with shared execution optimizations and Position Rescue.
