@@ -1153,6 +1153,9 @@ def _generate_sparse_scene(
     scene_idx: int,
     pos_token_to_coord: torch.Tensor,
     debug_column_context: bool,
+    progress_quantile: float,
+    progress_resolution: int,
+    progress_background_color: str,
 ) -> Tuple[torch.Tensor, torch.Tensor, SparseRowsGrid]:
     scene_start = time.perf_counter()
     token_pieces: List[torch.Tensor] = []
@@ -1163,6 +1166,19 @@ def _generate_sparse_scene(
     rows_grid: SparseRowsGrid = [
         [[] for _ in range(scene_cols_y)] for _ in range(scene_cols_x)
     ]
+    progress_root = os.environ.get("GAUSS_PROGRESS_DIR", "").strip()
+    progress_scene_dir: Optional[Path] = None
+    if progress_root:
+        progress_scene_dir = (
+            Path(progress_root)
+            / f"rank_{rank:04d}"
+            / f"scene_{scene_idx:07d}"
+        )
+        progress_scene_dir.mkdir(parents=True, exist_ok=True)
+        print(
+            f"[rank {rank}] scene {scene_idx} progress snapshots: {progress_scene_dir}",
+            flush=True,
+        )
 
     total_columns = scene_cols_x * scene_cols_y
     next_progress_pct = 10
@@ -1652,6 +1668,22 @@ def _generate_sparse_scene(
                     f"occ={occupancy_frac:.4f} ({occupancy_pct:.2f}%).",
                     flush=True,
                 )
+                if progress_scene_dir is not None:
+                    progress_path = progress_scene_dir / f"progress_{next_progress_pct:03d}.png"
+                    _save_sparse_progress_frame(
+                        gpt,
+                        rows_grid,
+                        z=z,
+                        output_path=progress_path,
+                        quantile=progress_quantile,
+                        resolution=progress_resolution,
+                        background_color=progress_background_color,
+                    )
+                    print(
+                        f"[rank {rank}] scene {scene_idx} wrote progress frame "
+                        f"{progress_path.name}.",
+                        flush=True,
+                    )
                 if (
                     early_stop_min_occupancy is not None
                     and occupancy_frac < early_stop_min_occupancy
@@ -1840,6 +1872,42 @@ def _render_topdown_png(
     )
     image = rendered[0].permute(1, 2, 0).mul(255.0).clamp(0, 255).byte().cpu().numpy()
     iio.imwrite(output_path, image)
+
+
+def _save_sparse_progress_frame(
+    gpt: GaussianGPT,
+    rows_grid: SparseRowsGrid,
+    *,
+    z: int,
+    output_path: Path,
+    quantile: float,
+    resolution: int,
+    background_color: str,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    decoded = _decode_sparse_rows_grid(gpt, rows_grid, z=z)
+    try:
+        coords = decoded.get("coords")
+        if coords is None or coords.numel() == 0:
+            fill_value = 255 if background_color.lower() == "white" else 0
+            blank = torch.full(
+                (int(resolution), int(resolution), 3),
+                fill_value,
+                dtype=torch.uint8,
+            ).numpy()
+            iio.imwrite(output_path, blank)
+        else:
+            _render_topdown_png(
+                decoded,
+                output_path=output_path,
+                quantile=quantile,
+                resolution=resolution,
+                background_color=background_color,
+            )
+    finally:
+        del decoded
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 
 def _add_dir_to_zip(zip_file: zipfile.ZipFile, directory: Path, arc_root: str) -> None:
@@ -2216,6 +2284,9 @@ def main(cfg: DictConfig) -> None:
                 scene_idx=global_scene_idx,
                 pos_token_to_coord=pos_token_to_coord,
                 debug_column_context=debug_column_context,
+                progress_quantile=topdown_quantile,
+                progress_resolution=topdown_resolution,
+                progress_background_color=topdown_background_color,
             )
             scene_token_count = int(scene_tokens.numel())
             local_effective_tokens += scene_token_count
