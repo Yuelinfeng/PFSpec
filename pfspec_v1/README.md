@@ -1,0 +1,7 @@
+# PFSpec v1: Ranker + MLP + Rescue and shared execution improvements
+
+This directory records the source used for the RTX 4090D formal A/B experiments. It retains the server paths and execution assumptions from that run. `tree/` contains the W1/W2 decoder, proposal graph and target tree runtime; `candidate/` contains Position Rescue; `project/` contains the relevant GaussianGPT, Ranker, Feature MLP and rendering source used by the run; `formal/` contains the experiment entry points, scene selections and summaries.
+
+The original runtime directories remain `/root/autodl-tmp/pfspec_repro_4090d_20261028/{project,tree,candidate}` and `/root/autodl-tmp/pfspec_formal_20261028/`. `formal/run_formal.sh` uses those directories by default. Several checkpoint paths are absolute; this source snapshot is an experiment record and has not been made into a portable installation. The trained Ranker and Feature MLP, GaussianGPT/VQ-VAE weights, scene tokens, generated outputs and full request records remain outside Git.
+
+Shared implementation includes lazy CUDA Graphs for Target and neural proposals, target tree verification and reuse of execution state. Rescue uses a separate sibling runtime. See `formal/FORMAL_RESULTS_ANALYSIS_2026-10-29.md` for measured results and the distinction between token throughput and complete-request time. The formal A run includes 11 BOS groups resumed in a new process after an out-of-memory event.

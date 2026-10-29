@@ -1,0 +1,31 @@
+# GaussianGPT speculative-decoding draft model.
+# S2 controlled architecture sweep.
+#
+# Same vocabulary, serialization, RoPE, context length, and token grammar
+# as the T24 GaussianGPT teacher.
+
+gpt_size:
+  n_embd: 384
+  n_layer: 6
+  n_head: 6
+  n_kv_head: 6
+
+n_ctx: 16384
+
+value_embed_every_n_layers: null
+
+vqvae:
+  checkpoint_path: null
+
+num_position_tokens: 1
+position_vocab_size: 8000
+shared_vocab: false
+
+dense_chunks: false
+chunk_shape: 20
+chunk_order: xyz
+
+rope_basis: position
+rope_bos_coord: [-1, -1, -1]
+sparse_position_hard_constraints: true
+learned_pos_embed: false

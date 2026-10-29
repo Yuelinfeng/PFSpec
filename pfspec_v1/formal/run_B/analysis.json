@@ -1,0 +1,184 @@
+{
+  "directory": "/root/autodl-tmp/pfspec_formal_20261028/run_B",
+  "status": "complete",
+  "expected": 240,
+  "recorded": 240,
+  "cohorts": {
+    "fixed512": {
+      "w1": {
+        "requests": 120,
+        "sources": 30,
+        "eos": 4,
+        "capped": 116,
+        "mean_total_seconds": 1.6525366396798442,
+        "median_total_seconds": 1.6230397447943687,
+        "mean_generated_tokens": 505.48333333333335,
+        "pooled_generation_tokens_per_second": 357.2641114825386,
+        "pooled_total_tokens_per_second": 305.8832834298086,
+        "quality": {
+          "gaussians": {
+            "mean": 45867.291666666664,
+            "median": 46575.0,
+            "p05": 27381.85,
+            "p95": 63477.0
+          },
+          "mean_opacity": {
+            "mean": 0.3584141585975885,
+            "median": 0.3637870103120804,
+            "p05": 0.2664065852761269,
+            "p95": 0.4529057651758194
+          },
+          "scale_clipped_fraction": {
+            "mean": 0.09580218754708766,
+            "median": 0.09434889629483223,
+            "p05": 0.05968128219246864,
+            "p95": 0.13734813183546066
+          },
+          "alpha_coverage": {
+            "mean": 0.12128537117193143,
+            "median": 0.1207071952521801,
+            "p05": 0.08987941294908523,
+            "p95": 0.15535521656274795
+          }
+        },
+        "mechanism": {
+          "rounds": 23367,
+          "target_calls": 25948,
+          "target_input_tokens": 114949,
+          "draft_calls": 23277,
+          "draft_input_tokens": 23277,
+          "tree_verify_calls": 23277,
+          "candidate_tree_nodes": 23277,
+          "target_tree_nodes": 93108,
+          "recovery_calls": 2461,
+          "position_proposed": 46644,
+          "position_verified": 30331,
+          "position_accepted": 27866,
+          "feature_proposed": 23277,
+          "feature_verified": 21146,
+          "feature_accepted": 6964,
+          "feature_branch_hits": 6964,
+          "feature_all_rejected": 14182,
+          "k1_steps": 90,
+          "generated_per_round": 2.5958830829802713,
+          "generation_seconds_per_round_including_request_setup": 0.00726600573510767,
+          "p1_acceptance": {
+            "accepted": 21226,
+            "verified": 23367
+          },
+          "feature_any_branch_acceptance_given_p1_and_tree": {
+            "accepted": 6964,
+            "verified": 21146
+          },
+          "p2_acceptance_given_feature": {
+            "accepted": 6640,
+            "verified": 6964
+          }
+        }
+      },
+      "w2": {
+        "requests": 120,
+        "sources": 30,
+        "eos": 5,
+        "capped": 115,
+        "mean_total_seconds": 1.670490404078737,
+        "median_total_seconds": 1.6736685913056135,
+        "mean_generated_tokens": 498.4583333333333,
+        "pooled_generation_tokens_per_second": 346.8680013570843,
+        "pooled_total_tokens_per_second": 298.390420032511,
+        "quality": {
+          "gaussians": {
+            "mean": 44335.708333333336,
+            "median": 45821.5,
+            "p05": 26372.0,
+            "p95": 61119.0
+          },
+          "mean_opacity": {
+            "mean": 0.34873653861383597,
+            "median": 0.35222330689430237,
+            "p05": 0.2623152047395706,
+            "p95": 0.441211998462677
+          },
+          "scale_clipped_fraction": {
+            "mean": 0.1043882759908835,
+            "median": 0.09820321947336197,
+            "p05": 0.06281666960567237,
+            "p95": 0.16106517985463142
+          },
+          "alpha_coverage": {
+            "mean": 0.11981163549547394,
+            "median": 0.12186460196971893,
+            "p05": 0.08686020374298095,
+            "p95": 0.149294925481081
+          }
+        },
+        "mechanism": {
+          "rounds": 21603,
+          "target_calls": 24100,
+          "target_input_tokens": 150835,
+          "draft_calls": 21513,
+          "draft_input_tokens": 21513,
+          "tree_verify_calls": 21513,
+          "candidate_tree_nodes": 43026,
+          "target_tree_nodes": 129078,
+          "recovery_calls": 2377,
+          "position_proposed": 43116,
+          "position_verified": 29910,
+          "position_accepted": 27528,
+          "feature_proposed": 43026,
+          "feature_verified": 32680,
+          "feature_accepted": 8307,
+          "feature_branch_hits": 8307,
+          "feature_all_rejected": 11268,
+          "k1_steps": 90,
+          "generated_per_round": 2.768828403462482,
+          "generation_seconds_per_round_including_request_setup": 0.007982369064398372,
+          "p1_acceptance": {
+            "accepted": 19657,
+            "verified": 21603
+          },
+          "feature_any_branch_acceptance_given_p1_and_tree": {
+            "accepted": 8307,
+            "verified": 19575
+          },
+          "p2_acceptance_given_feature": {
+            "accepted": 7871,
+            "verified": 8307
+          }
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "fixed512": {
+      "w2/w1": {
+        "generation": {
+          "sources": 30,
+          "pairs": 120,
+          "ratio": 0.9691458327201963,
+          "interval95": [
+            0.953387310670057,
+            0.9845035991882348
+          ]
+        },
+        "total": {
+          "sources": 30,
+          "pairs": 120,
+          "ratio": 0.9737478725017246,
+          "interval95": [
+            0.960656738144113,
+            0.9864585732097497
+          ]
+        },
+        "both_eos": 0,
+        "same_generated_length": 111
+      }
+    }
+  },
+  "scope": "Throughput uses actual generated tokens. End-to-end time includes generation, Gaussian export and six PNG views; loading and warmup are excluded.",
+  "bootstrap": {
+    "unit": "scene for completion/fixed; seed for BOS",
+    "iterations": 5000,
+    "seed": 20261028
+  }
+}

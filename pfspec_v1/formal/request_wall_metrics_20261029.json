@@ -1,0 +1,573 @@
+{
+  "archive": "patches/pfspec_formal_20261028/PFSpec_Formal_4090D_Review_20261029.tar.gz",
+  "seed": 20261028,
+  "iterations": 5000,
+  "request_time_definition": "denominator total_seconds / numerator total_seconds",
+  "throughput_definition": "(numerator tokens / numerator seconds) / (denominator tokens / denominator seconds)",
+  "resampling_unit": "scene for fixed and completion; seed for BOS",
+  "experiments": {
+    "A": {
+      "fixed512": {
+        "opt_target/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 3.17500065268131,
+            "interval95": [
+              3.124159050630433,
+              3.2143742113558926
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 2.9440448375334243,
+            "interval95": [
+              2.88949689060166,
+              2.987831151715477
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 2.9440448375334243,
+            "interval95": [
+              2.88949689060166,
+              2.987831151715477
+            ]
+          }
+        },
+        "ranker_only/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.39401896825426,
+            "interval95": [
+              1.3717907353678742,
+              1.4217485577354994
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.355607507876576,
+            "interval95": [
+              1.324651462953773,
+              1.3942855925753102
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.2578834826527932,
+            "interval95": [
+              1.162522622118967,
+              1.3476379668174854
+            ]
+          }
+        },
+        "w1/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 5.052820084353618,
+            "interval95": [
+              4.876228826855268,
+              5.214503080790268
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 4.478134696784555,
+            "interval95": [
+              4.3349487693604205,
+              4.630036272826091
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 4.036482367162094,
+            "interval95": [
+              3.643364466667487,
+              4.400724347328764
+            ]
+          }
+        },
+        "w1/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.5914390694964033,
+            "interval95": [
+              1.5401691783426676,
+              1.6487850294943962
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.5210823692944908,
+            "interval95": [
+              1.4709376492817,
+              1.585870344999139
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.3710668790438445,
+            "interval95": [
+              1.2576452989014275,
+              1.4780502191834262
+            ]
+          }
+        },
+        "w1/ranker_only": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.1416193794617973,
+            "interval95": [
+              1.115915385095513,
+              1.1662834587449686
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.122066940804359,
+            "interval95": [
+              1.098978729172861,
+              1.1452853116787656
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.0899792373076997,
+            "interval95": [
+              1.0336408771947931,
+              1.1433165070048892
+            ]
+          }
+        },
+        "rescue/w1": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.0124559718753463,
+            "interval95": [
+              1.0074048605054813,
+              1.0163316353647553
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.0118139807586979,
+            "interval95": [
+              1.005618963347476,
+              1.0173789402927709
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 1.0118139807586979,
+            "interval95": [
+              1.005618963347476,
+              1.0173789402927709
+            ]
+          }
+        }
+      },
+      "natural_bos": {
+        "opt_target/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 2.984263771633162,
+            "interval95": [
+              2.9349978643401617,
+              3.022471506366063
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 2.8906725443993873,
+            "interval95": [
+              2.8439512534352276,
+              2.926526824068402
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 2.8906725443993873,
+            "interval95": [
+              2.843951253435228,
+              2.926526824068402
+            ]
+          }
+        },
+        "ranker_only/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.3243890263077238,
+            "interval95": [
+              1.2965100519517851,
+              1.3546249499933734
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.3060858386910121,
+            "interval95": [
+              1.2801754855399765,
+              1.333977015319171
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.3353585819820177,
+            "interval95": [
+              1.2085706652967732,
+              1.493014568394064
+            ]
+          }
+        },
+        "w1/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 3.7552465403708406,
+            "interval95": [
+              3.6196792753369658,
+              3.8925615774741265
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 3.5907825884379703,
+            "interval95": [
+              3.4681141130917794,
+              3.7154295435051026
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 3.6948469032220213,
+            "interval95": [
+              3.336869661840696,
+              4.091716827164334
+            ]
+          }
+        },
+        "w1/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.2583494046559267,
+            "interval95": [
+              1.2173499265839258,
+              1.30022490036941
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.2421962478576243,
+            "interval95": [
+              1.2039194536784898,
+              1.2814507308173242
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 1.2781962835537024,
+            "interval95": [
+              1.1530487141850239,
+              1.4183855967787515
+            ]
+          }
+        },
+        "w1/ranker_only": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9501357831120743,
+            "interval95": [
+              0.9136393915651353,
+              0.9860413173178929
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9510831608913091,
+            "interval95": [
+              0.9170663710400362,
+              0.9848766240553392
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9571932968420575,
+            "interval95": [
+              0.8249409160839539,
+              1.099639635618179
+            ]
+          }
+        },
+        "rescue/w1": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9842812650704341,
+            "interval95": [
+              0.9757646405162383,
+              0.9910254374495462
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9850120421882068,
+            "interval95": [
+              0.9768101384480079,
+              0.9915350004991638
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 30,
+            "ratio": 0.9850120421882068,
+            "interval95": [
+              0.9768101384480079,
+              0.9915350004991638
+            ]
+          }
+        }
+      },
+      "natural_completion": {
+        "opt_target/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 2.962824481092192,
+            "interval95": [
+              2.9056649309570943,
+              3.007479812728326
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 2.8068970508382494,
+            "interval95": [
+              2.724813407429289,
+              2.870373859601953
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 2.8068970508382494,
+            "interval95": [
+              2.724813407429289,
+              2.870373859601953
+            ]
+          }
+        },
+        "ranker_only/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.356536861729057,
+            "interval95": [
+              1.3277085663801835,
+              1.3965892365932484
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.3573591968312664,
+            "interval95": [
+              1.3132375872353432,
+              1.418711679319494
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.019959207247159,
+            "interval95": [
+              0.7626924783292145,
+              1.2794468638814858
+            ]
+          }
+        },
+        "w1/target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 3.976922186363268,
+            "interval95": [
+              3.8560076412030955,
+              4.112715729010413
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 3.767390305006697,
+            "interval95": [
+              3.651570798957125,
+              3.9088477396471175
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 2.8244090157894903,
+            "interval95": [
+              2.043634396056394,
+              3.789297527069222
+            ]
+          }
+        },
+        "w1/opt_target": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.3422739726037523,
+            "interval95": [
+              1.2961810266392053,
+              1.3981260820322428
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.3421904105394986,
+            "interval95": [
+              1.2822469082412657,
+              1.4263866618153063
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 1.0062389053228764,
+            "interval95": [
+              0.7408163341245642,
+              1.3292514521131462
+            ]
+          }
+        },
+        "w1/ranker_only": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.989485807921854,
+            "interval95": [
+              0.9629959728438291,
+              1.0172249857937323
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.9888247809959375,
+            "interval95": [
+              0.9648500328112405,
+              1.0157352115002305
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.9865481856266457,
+            "interval95": [
+              0.8117640141075241,
+              1.2056794535214468
+            ]
+          }
+        },
+        "rescue/w1": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.9930964658084259,
+            "interval95": [
+              0.9897757432345506,
+              0.996500593409568
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.9934521258424396,
+            "interval95": [
+              0.9908596361011968,
+              0.9961234617021003
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 60,
+            "ratio": 0.9934521258424397,
+            "interval95": [
+              0.9908596361011969,
+              0.9961234617021003
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "fixed512": {
+        "w2/w1": {
+          "generation_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 0.9691458327201963,
+            "interval95": [
+              0.953387310670057,
+              0.9845035991882348
+            ]
+          },
+          "end_to_end_throughput": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 0.9737478725017246,
+            "interval95": [
+              0.960656738144113,
+              0.9864585732097497
+            ]
+          },
+          "request_time": {
+            "sources": 30,
+            "pairs": 120,
+            "ratio": 0.9995950208930562,
+            "interval95": [
+              0.961363804316638,
+              1.0438548272528987
+            ]
+          }
+        }
+      }
+    }
+  }
+}
